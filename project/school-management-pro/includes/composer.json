@@ -1,4 +1,8 @@
 {
+    "name": "edutech/wordpress-plugin",
+    "description": "Edutech v1.0 education management plugin for WordPress.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
     "require": {
         "stripe/stripe-php": "^13.13",
         "twilio/sdk": "^5.36",

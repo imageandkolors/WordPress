@@ -1,0 +1,54 @@
+name: Edutech v1.0 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, mbstring, mysql, xml, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate Composer manifest
+        working-directory: project/school-management-pro/includes
+        run: composer validate
+
+      - name: Install locked dependencies
+        working-directory: project/school-management-pro/includes
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Check platform requirements
+        working-directory: project/school-management-pro/includes
+        run: composer check-platform-reqs --no-dev
+
+      - name: Run Edutech smoke tests
+        run: bash tests/smoke-test.sh
+
+      - name: Audit Composer dependencies
+        id: audit
+        working-directory: project/school-management-pro/includes
+        continue-on-error: true
+        run: composer audit --no-dev --format=plain | tee "$GITHUB_WORKSPACE/composer-audit-ci.txt"
+
+      - name: Upload dependency audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: composer-audit-report
+          path: composer-audit-ci.txt
+          if-no-files-found: ignore
