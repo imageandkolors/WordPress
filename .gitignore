@@ -1,0 +1,40 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# WordPress and local runtime files
+wp-config.php
+wp-content/uploads/
+wp-content/cache/
+*.log
+
+# Local tools and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+node_modules/
+
+# Archives and generated artifacts
+*.zip
+*.tar
+*.gz
+/build/
+/dist/
+/release/
+
+# Root-level analysis captures and uploaded source archives
+/*.txt
+/*-backup-*
+
+# Vendored documentation contains provider test credentials and is not needed at runtime.
+/project/school-management-pro/includes/vendor/stripe/stripe-php/README.md
+
+# Temporary analysis output
+*.tmp
+*.swp
+
+# Keep the packaged plugin build outside version control; release artifacts are attached to Git releases.

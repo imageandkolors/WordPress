@@ -1,0 +1,77 @@
+/* Gate Pass Print Styles */
+.wlsm-gate-pass-heading {
+	font-weight: bold;
+	font-size: 1.1em;
+	border-bottom: 2px solid #333;
+	padding-bottom: 6px;
+	margin-bottom: 8px;
+	text-align: center;
+}
+
+/* New Table Layout Styles */
+.wlsm-gate-pass-print-table {
+	width: 100%;
+	margin-bottom: 20px;
+	border-collapse: collapse;
+}
+
+.wlsm-gate-pass-print-table th, 
+.wlsm-gate-pass-print-table td {
+	padding: 8px 12px;
+	border: 1px solid #dee2e6;
+	vertical-align: middle;
+	font-size: 14px;
+}
+
+.wlsm-gate-pass-print-table th {
+	background-color: #f8f9fa;
+	font-weight: 600;
+	color: #333;
+	text-align: left;
+}
+
+.wlsm-gate-pass-section-row th {
+	background-color: #e9ecef;
+	font-size: 1.05em;
+	letter-spacing: 0.5px;
+	padding: 10px;
+	text-align: center;
+}
+
+.wlsm-gate-pass-print-photo {
+	width: 100px !important;
+	height: 100px !important;
+	object-fit: cover;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+.wlsm-print-gate-pass-container {
+	padding: 10px;
+	max-width: 800px;
+	margin: 0 auto;
+}
+
+@media print {
+	.wlsm-container {
+		margin: 0;
+		padding: 0;
+	}
+	
+	.wlsm-gate-pass-print-table th {
+		background-color: #f8f9fa !important;
+		-webkit-print-color-adjust: exact;
+		color-adjust: exact;
+	}
+	
+	.wlsm-gate-pass-section-row th {
+		background-color: #e9ecef !important;
+		-webkit-print-color-adjust: exact;
+		color-adjust: exact;
+	}
+
+	.wlsm-gate-pass-print-photo {
+		-webkit-print-color-adjust: exact;
+		color-adjust: exact;
+	}
+}
