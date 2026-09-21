@@ -29,12 +29,20 @@ if ( ! defined( 'EDUTECH_PLUGIN_SLUG' ) ) {
 	define( 'EDUTECH_PLUGIN_SLUG', 'edutech' );
 }
 
+if ( ! defined( 'EDUTECH_DB_VERSION' ) ) {
+	define( 'EDUTECH_DB_VERSION', '1.0.0' );
+}
+
+require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-environment.php';
+require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-migrations.php';
+require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-modules.php';
+
 final class WLSM_School_Management {
 	private static $instance = null;
 
-	private function __construct() {
-		$this->initialize_hooks();
-		$this->setup_database();
+		private function __construct() {
+			$this->initialize_hooks();
+			$this->setup_database();
 	}
 
 	public static function get_instance() {
@@ -47,15 +55,23 @@ final class WLSM_School_Management {
 		private function initialize_hooks() {
 			require_once WLSM_PLUGIN_DIR_PATH . 'includes/helpers/WLSM_Brand.php';
 
+			if ( ! Edutech_Environment::is_compatible() ) {
+				add_action( 'admin_notices', array( 'Edutech_Environment', 'render_admin_notice' ) );
+				return;
+			}
+
 			if ( is_admin() ) {
 			require_once WLSM_PLUGIN_DIR_PATH . 'admin/admin.php';
 		}
 		require_once WLSM_PLUGIN_DIR_PATH . 'public/public.php';
 
-		// Login Redirect
-		require_once WLSM_PLUGIN_DIR_PATH . 'includes/helpers/WLSM_Login.php';
-		add_filter( 'login_redirect', array( 'WLSM_Login', 'redirect_to_dashboard' ), 10, 3 );
-	}
+			// Login Redirect
+			require_once WLSM_PLUGIN_DIR_PATH . 'includes/helpers/WLSM_Login.php';
+			add_filter( 'login_redirect', array( 'WLSM_Login', 'redirect_to_dashboard' ), 10, 3 );
+
+			add_action( 'init', array( 'Edutech_Migrations', 'run' ), 1 );
+			add_action( 'init', array( 'Edutech_Modules', 'boot' ), 2 );
+		}
 
 	private function setup_database() {
 		require_once WLSM_PLUGIN_DIR_PATH . 'admin/inc/WLSM_Database.php';
