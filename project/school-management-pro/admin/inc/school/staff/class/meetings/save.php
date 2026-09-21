@@ -501,7 +501,7 @@ $registration_types  = WLSM_Helper::meeting_registration_types();
 										<?php endif; ?>
 									<?php endif; ?>
 
-									<a target="blank"
+									<a target="_blank" rel="noopener noreferrer"
 										class="btn <?php echo $is_token_expired ? 'btn-warning' : 'btn-primary'; ?>"
 										href="<?php echo esc_url($url); ?>">
 										<i class="fas fa-sync-alt"></i>

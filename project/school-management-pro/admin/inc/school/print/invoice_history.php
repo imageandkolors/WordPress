@@ -1,3 +1,5 @@
+<?php defined( 'ABSPATH' ) || die(); ?>
+
 <span class="wlsm-font-bold"> <strong><?php esc_html_e( 'Current Student Details', 'school-management' ); ?></strong></span><br>
 
 <div class="row wlsm-student-details">

@@ -8,7 +8,7 @@ PHP CLI, Composer, and the required PHP extensions are installed in the developm
 
 | Dependency | Installed version | Status |
 |---|---:|---|
-| `firebase/php-jwt` | 5.5.1 | Requires upgrade planning; Composer reports advisories affecting the 5.x line. |
+| `firebase/php-jwt` | 6.11.1 | Upgraded from 5.5.1; the critical algorithm-confusion issue is addressed, but the low weak-encryption advisory requires the future Google Auth/Firebase migration to 7.x. |
 | `guzzlehttp/guzzle` | 6.5.8 | Requires upgrade planning; Composer reports current host, cookie, redirect, and proxy advisories affecting the 6.x line. |
 | `kreait/firebase-php` | 5.26.0 | Legacy line; also brings an abandoned `kreait/clock` package. |
 | `stripe/stripe-php` | 13.13.0 | Installed from the locked manifest. |
@@ -28,7 +28,7 @@ The lock metadata was synchronized with the completed Composer manifest. The man
 
 ## Security finding
 
-Composer reports **17 security advisories affecting 5 packages** in the current legacy dependency graph. The audit output is retained locally as `composer-audit.txt` and CI uploads an audit artifact. CI does not hide the result, but the audit step is currently non-blocking so the source and test pipeline can continue while compatibility work is performed.
+Composer now reports **16 security advisories affecting 5 packages** in the current legacy dependency graph after the JWT upgrade. The audit output is retained locally as `composer-audit.txt` and CI uploads an audit artifact. CI does not hide the result, but the audit step is currently non-blocking so the source and test pipeline can continue while compatibility work is performed.
 
 The advisories must be resolved before production release. The safe remediation sequence is:
 

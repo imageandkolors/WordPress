@@ -39,6 +39,9 @@ jobs:
       - name: Run Edutech smoke tests
         run: bash tests/smoke-test.sh
 
+      - name: Run static security scan
+        run: bash tests/security-scan.sh
+
       - name: Audit Composer dependencies
         id: audit
         working-directory: project/school-management-pro/includes

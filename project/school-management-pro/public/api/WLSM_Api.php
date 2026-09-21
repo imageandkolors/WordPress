@@ -13,6 +13,54 @@ class WLSM_Api
 	const PARENT_PREFIX = 'parent';
 	const STAFF_PREFIX = 'staff';
 
+	/**
+	 * Central permission callback for authenticated plugin REST routes.
+	 *
+	 * A logged-in WordPress account is not sufficient by itself. The account
+	 * must resolve to a student, parent, staff member, or privileged designer.
+	 * Object-level and school-scope checks remain the responsibility of each
+	 * callback until the policy service is fully migrated.
+	 *
+	 * @param WP_REST_Request $request Current REST request.
+	 * @return true|WP_Error
+	 */
+	public static function permission_logged_in( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error(
+				'rest_not_logged_in',
+				esc_html__( 'Authentication is required.', 'school-management' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_Error(
+				'rest_invalid_user',
+				esc_html__( 'The current user could not be resolved.', 'school-management' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		if ( current_user_can( WLSM_ADMIN_CAPABILITY ) ) {
+			return true;
+		}
+
+		$student          = WLSM_M::get_student( $user_id );
+		$staff            = WLSM_M::get_staff( $user_id );
+		$parent_student_ids = WLSM_M_Parent::get_parent_student_ids( $user_id );
+
+		if ( $student || $staff || ! empty( $parent_student_ids ) ) {
+			return true;
+		}
+
+		return new WP_Error(
+				'rest_plugin_account_required',
+				esc_html__( 'This account is not associated with an authorized school profile.', 'school-management' ),
+				array( 'status' => 403 )
+			);
+	}
+
 	// Checks if user is student or parent.
 	public static function token_before_dispatch($data, $user)
 	{
@@ -175,9 +223,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'account_settings'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -188,9 +234,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_profile'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -201,9 +245,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_dashboard'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -214,9 +256,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_transport'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -227,9 +267,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_fee_structure'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -240,9 +278,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_study_materials'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -253,9 +289,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_noticeboard'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -266,9 +300,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'fee_invoices'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -279,9 +311,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'fee_invoice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -292,9 +322,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_payments'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -305,9 +333,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_payment'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -318,9 +344,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_events'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -331,9 +355,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_event'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -344,9 +366,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_join_event'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -357,9 +377,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_unjoin_event'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -370,9 +388,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_class_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -383,9 +399,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_books_issued'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -396,9 +410,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_book_issued'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -409,9 +421,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_live_classes'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -422,9 +432,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'submit_staff_rating'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -435,9 +443,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_attendance'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -448,9 +454,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_study_materials'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -461,9 +465,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_study_material'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -474,9 +476,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_homeworks'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -487,9 +487,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_homework'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -500,9 +498,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exams_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -513,9 +509,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -526,9 +520,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'admit_cards'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -539,9 +531,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'admit_card'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -552,9 +542,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_results'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -565,9 +553,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_result'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -578,9 +564,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'overall_result'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -591,9 +575,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_leave_requests'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -604,9 +586,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_submit_leave_request'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -617,9 +597,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_certificates'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -630,9 +608,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_certificate_generate'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -643,9 +619,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_subjects'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -656,9 +630,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_tickets'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -669,9 +641,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_submit_ticket'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -682,9 +652,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_ticket_history'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -695,9 +663,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_submit_homework_request'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -708,9 +674,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_submitted_homeworks'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -721,9 +685,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'fetch_submitted_homework'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -734,9 +696,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_submit_invoice_payment_request'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -747,9 +707,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_about_school'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -760,9 +718,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'student_profile_update'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -774,9 +730,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'parent_switch_student'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -787,9 +741,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'parent_students'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -800,9 +752,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_lessons'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -815,9 +765,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_lessons_by_filters'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -828,9 +776,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_lesson_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -841,9 +787,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'st_notification_add'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -854,9 +798,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'get_students_notification'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -867,9 +809,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'staff_profile'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -880,9 +820,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'staff_dashboard'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -893,9 +831,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'school_details_with_today_attendance'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -906,9 +842,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'all_permission_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -919,9 +853,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'class_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -932,9 +864,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'section_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -945,9 +875,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -958,9 +886,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'class_subject_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -971,9 +897,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'subject_teacher_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -984,9 +908,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_classes_and_sections'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -997,9 +919,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_class_sections'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1010,9 +930,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_section'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1023,9 +941,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_section'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1036,9 +952,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_section'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1049,9 +963,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_mediums'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1062,9 +974,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_medium'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1075,9 +985,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_medium'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1088,9 +996,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_student_types'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1101,9 +1007,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_student_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1114,9 +1018,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_student_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1127,9 +1029,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_subject_types'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1140,9 +1040,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_subject_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1153,9 +1051,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_subject_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1166,9 +1062,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_subjects'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1179,9 +1073,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_subject'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1192,9 +1084,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'subject_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1205,9 +1095,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_subject'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1218,9 +1106,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_subject'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1231,9 +1117,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'staff_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1244,9 +1128,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'assign_staff_to_subject'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1257,9 +1139,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_assigned_staff_from_subject'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1270,9 +1150,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'class_time_table_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1283,9 +1161,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_class_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1296,9 +1172,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_class_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1309,9 +1183,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_time_table_by_id'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1322,9 +1194,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_class_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1335,9 +1205,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_class_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1348,9 +1216,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_staff_subject_class_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1361,9 +1227,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_staff_time_table'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1374,9 +1238,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_students_attendance'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1387,9 +1249,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'manage_students_attendance'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1400,9 +1260,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'take_student_attendance'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1413,9 +1271,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_student_leaves'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1426,9 +1282,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_student_leave'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1439,9 +1293,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'student_leave_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1452,9 +1304,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_student_leave'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1465,9 +1315,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_student_leave'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1478,9 +1326,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_study_materials'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1491,9 +1337,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_study_material'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1504,9 +1348,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_study_material_by_id'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1517,9 +1359,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_study_material'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1530,9 +1370,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_study_material'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1543,9 +1381,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_homeworks'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1556,9 +1392,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_homework'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1569,9 +1403,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_homework_by_id'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1582,9 +1414,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_homework'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1595,9 +1425,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_homework'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1608,9 +1436,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_homework_submitted'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1621,9 +1447,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_notices'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1634,9 +1458,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_notice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1647,9 +1469,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_notice_by_id'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1660,9 +1480,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_notice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1673,9 +1491,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_notice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1686,9 +1502,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_events'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1699,9 +1513,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_event'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1712,9 +1524,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_event_by_id'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1725,9 +1535,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_event'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1738,9 +1546,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_event'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1751,9 +1557,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_live_classes'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1764,9 +1568,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_live_class'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1777,9 +1579,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_live_class_by_id'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1790,9 +1590,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_live_class'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1803,9 +1601,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_live_class'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1816,9 +1612,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_staff_rating'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1829,9 +1623,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_student_birthdays'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1842,9 +1634,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'students_data'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1855,9 +1645,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'assigned_class_section_student'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1868,9 +1656,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_inquiries'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1881,9 +1667,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_inquiry'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1894,9 +1678,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'inquiry_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1907,9 +1689,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_inquiry'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1920,9 +1700,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'delete_inquiry'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1933,9 +1711,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_exam_groups'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1946,9 +1722,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_exam_group'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1959,9 +1733,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_group_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1972,9 +1744,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_exam_group'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1985,9 +1755,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_exam_group'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -1998,9 +1766,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_class_subjects'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2011,9 +1777,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_exams'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2024,9 +1788,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_exam'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2037,9 +1799,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2050,9 +1810,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_exam'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2063,9 +1821,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_exam'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2076,9 +1832,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'students_without_admit_card'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2089,9 +1843,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_admit_cards'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2102,9 +1854,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'generate_admit_cards'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2115,9 +1865,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'admit_card_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2128,9 +1876,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_admit_card'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2141,9 +1887,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_admit_card'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2154,9 +1898,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'students_without_result'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2167,9 +1909,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_results'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2180,9 +1920,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_paper_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2193,9 +1931,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_exam_result'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2206,9 +1942,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'exam_result_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2219,9 +1953,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'edit_exam_result'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2232,9 +1964,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_exam_result'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2245,9 +1975,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_class_exams'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2258,9 +1986,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_academic_reports'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2271,9 +1997,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::CREATABLE,
 				'callback' => array('WLSM_Api', 'add_new_academic_report'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2284,9 +2008,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'academic_report_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2297,9 +2019,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::EDITABLE,
 				'callback' => array('WLSM_Api', 'edit_academic_report'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2310,9 +2030,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::DELETABLE,
 				'callback' => array('WLSM_Api', 'delete_academic_report'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2323,9 +2041,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'session_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2336,9 +2052,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_accounting_dashboard'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2349,9 +2063,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_fee_types'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2362,9 +2074,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_fee_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2375,9 +2085,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'fee_type_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2388,9 +2096,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_fee_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2401,9 +2107,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_fee_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2414,9 +2118,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'class_fee_types'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2427,9 +2129,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_concession_types'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2440,9 +2140,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_concession_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2453,9 +2151,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'concession_type_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2466,9 +2162,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_concession_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2479,9 +2173,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_concession_type'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2492,9 +2184,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'students_with_concession'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2505,9 +2195,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'concession_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2518,9 +2206,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'student_concession_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2531,9 +2217,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_student_concession'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2544,9 +2228,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'student_fee_types'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2557,9 +2239,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'payment_methods'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2570,9 +2250,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_invoices'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2583,9 +2261,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_invoice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2596,9 +2272,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'invoice_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2609,9 +2283,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_invoice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2622,9 +2294,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_invoice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2635,9 +2305,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_payment'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2648,9 +2316,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_pending_payments'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2661,9 +2327,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'approve_pending_payment'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2674,9 +2338,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_pending_payment'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2687,9 +2349,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_payment_history'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2700,9 +2360,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_payment'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2713,9 +2371,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'route_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2726,9 +2382,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'route_vehicle_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2739,9 +2393,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_transport_students'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2752,9 +2404,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'assign_route_to_student'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2765,9 +2415,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_student_transport_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2778,9 +2426,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'generate_student_transport_invoice'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2791,9 +2437,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_collect_payment'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2804,9 +2448,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'student_finance_summary'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2817,9 +2459,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_invoices_report'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2830,9 +2470,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_donation_categories'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2843,9 +2481,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_donation_category'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2856,9 +2492,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'donation_category_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2869,9 +2503,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_donation_category'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2882,9 +2514,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_donation_category'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2895,9 +2525,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_donations'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2908,9 +2536,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_donation'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2921,9 +2547,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'donation_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2934,9 +2558,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'edit_donation'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2947,9 +2569,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_donation'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2960,9 +2580,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_expense_categories'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2973,9 +2591,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_expense_category'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2986,9 +2602,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'expense_category_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -2999,9 +2613,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_expense_category'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3012,9 +2624,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_expense_category'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3025,9 +2635,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_expenses'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3038,9 +2646,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_expense'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3051,9 +2657,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'expense_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3064,9 +2668,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'edit_expense'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3077,9 +2679,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_expense'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3090,9 +2690,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_hostel_dashboard_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3103,9 +2701,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_hostels'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3115,9 +2711,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( 'WLSM_Api', 'add_new_hostel' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3128,9 +2722,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'hostel_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3141,9 +2733,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_hostel'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3153,9 +2743,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( 'WLSM_Api', 'delete_hostel' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3166,9 +2754,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'hostel_list'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3179,9 +2765,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_rooms'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3191,9 +2775,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( 'WLSM_Api', 'add_new_room' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3204,9 +2786,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'room_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3217,9 +2797,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_room'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3229,9 +2807,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( 'WLSM_Api', 'delete_room' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3242,9 +2818,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_chapters'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3255,9 +2829,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_chapter'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3268,9 +2840,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'chapter_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3281,9 +2851,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_chapter'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3294,9 +2862,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_chapter'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3307,9 +2873,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'class_subject_chapters'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3320,9 +2884,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_lessons'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3333,9 +2895,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_lesson'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3346,9 +2906,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'lesson_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3359,9 +2917,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'edit_lesson'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3372,9 +2928,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_lesson'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3385,9 +2939,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_activities'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3398,9 +2950,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_activity'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3411,9 +2961,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'activity_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3424,9 +2972,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_activity'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3437,9 +2983,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_activity'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3450,9 +2994,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_ticket_dashboard_stats'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3463,9 +3005,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_tickets'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3476,9 +3016,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_ticket'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3489,9 +3027,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'ticket_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3502,9 +3038,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_ticket'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3515,9 +3049,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_ticket'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3528,9 +3060,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_books'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3541,9 +3071,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_book'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3554,9 +3082,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'book_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3567,9 +3093,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'edit_book'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3580,9 +3104,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_book'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3593,9 +3115,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'issue_book'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3606,9 +3126,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_books_issued'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3619,9 +3137,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array('WLSM_Api', 'deposit_book_issued'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3632,9 +3148,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_book_issued'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3645,9 +3159,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'issue_library_card'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3658,9 +3170,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'view_library_cards'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3671,9 +3181,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_library_card'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3684,9 +3192,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_roles'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3697,9 +3203,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_admins'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3710,9 +3214,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'add_new_admin'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3723,9 +3225,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array('WLSM_Api', 'admin_details'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3736,9 +3236,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array('WLSM_Api', 'edit_admin'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3749,9 +3247,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array('WLSM_Api', 'delete_admin'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3762,9 +3258,7 @@ class WLSM_Api
 			array(
 				'methods' => WP_REST_Server::READABLE,
 				'callback' => array('WLSM_Api', 'view_roles'),
-				'permission_callback' => function ($request) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3774,9 +3268,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( 'WLSM_Api', 'add_new_role' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3786,9 +3278,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( 'WLSM_Api', 'role_details' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3798,9 +3288,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( 'WLSM_Api', 'edit_role' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 
@@ -3810,9 +3298,7 @@ class WLSM_Api
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( 'WLSM_Api', 'delete_role' ),
-				'permission_callback' => function( $request ) {
-					return is_user_logged_in();
-				}
+				'permission_callback' => array('WLSM_Api', 'permission_logged_in')
 			)
 		);
 	}

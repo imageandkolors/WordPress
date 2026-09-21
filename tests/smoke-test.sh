@@ -14,6 +14,7 @@ composer validate --working-dir="$COMPOSER_DIR"
 composer check-platform-reqs --working-dir="$COMPOSER_DIR" --no-dev
 
 test -s "$COMPOSER_DIR/vendor/autoload.php"
+php "$ROOT_DIR/tests/jwt-compat.php"
 test -f "$PLUGIN_DIR/school-management.php"
 test -f "$PLUGIN_DIR/includes/helpers/WLSM_Brand.php"
 

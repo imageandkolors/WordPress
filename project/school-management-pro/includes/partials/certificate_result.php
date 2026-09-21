@@ -1,4 +1,6 @@
 <?php
+defined( 'ABSPATH' ) || die();
+
 // --- Always-available defaults (prevents "Undefined variable" in parent files) ---
 $exam_id             = 0;
 $exam_title          = '';
