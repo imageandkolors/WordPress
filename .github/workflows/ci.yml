@@ -24,6 +24,9 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Install security-scan tools
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
+
       - name: Validate Composer manifest
         working-directory: project/school-management-pro/includes
         run: composer validate
