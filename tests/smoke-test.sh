@@ -17,6 +17,7 @@ test -s "$COMPOSER_DIR/vendor/autoload.php"
 php "$ROOT_DIR/tests/jwt-compat.php"
 php "$ROOT_DIR/tests/feature-flags.php"
 php "$ROOT_DIR/tests/portal-wrapper.php"
+php "$ROOT_DIR/tests/auth.php"
 test -f "$PLUGIN_DIR/school-management.php"
 test -f "$PLUGIN_DIR/includes/helpers/WLSM_Brand.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-environment.php"
@@ -25,6 +26,7 @@ test -f "$PLUGIN_DIR/includes/core/class-edutech-modules.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-features.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-portal.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-portal-pages.php"
+test -f "$PLUGIN_DIR/includes/core/class-edutech-auth.php"
 test -f "$PLUGIN_DIR/assets/css/edutech-design-system.css"
 
 grep -q 'Plugin Name: Edutech v1.0' "$PLUGIN_DIR/school-management.php"
@@ -36,6 +38,10 @@ grep -q 'class Edutech_Modules' "$PLUGIN_DIR/includes/core/class-edutech-modules
 grep -q 'class Edutech_Features' "$PLUGIN_DIR/includes/core/class-edutech-features.php"
 grep -q 'class Edutech_Portal' "$PLUGIN_DIR/includes/core/class-edutech-portal.php"
 grep -q 'class Edutech_Portal_Pages' "$PLUGIN_DIR/includes/core/class-edutech-portal-pages.php"
+grep -q 'class Edutech_Auth' "$PLUGIN_DIR/includes/core/class-edutech-auth.php"
+grep -q 'Edutech_Auth::login_form_args' "$PLUGIN_DIR/public/inc/account/index.php"
+grep -q 'safe_redirect' "$PLUGIN_DIR/includes/helpers/WLSM_Login.php"
+grep -q 'edutech-auth-card' "$PLUGIN_DIR/assets/css/edutech-design-system.css"
 grep -q 'edutech-portal-frame--standalone' "$PLUGIN_DIR/assets/css/edutech-design-system.css"
 grep -q 'Edutech_Portal::wrap' "$PLUGIN_DIR/public/inc/WLSM_Shortcode.php"
 grep -q '^\.edutech-portal {' "$PLUGIN_DIR/assets/css/edutech-design-system.css"
@@ -62,5 +68,6 @@ unzip -t "$ROOT_DIR/release/edutech-v1.0.0.zip" >/dev/null
 unzip -p "$ROOT_DIR/release/edutech-v1.0.0.zip" '*/EDUTECH-MANIFEST.json' | grep -q '"database_version": "1.0.0"'
 unzip -p "$ROOT_DIR/release/edutech-v1.0.0.zip" '*/assets/css/edutech-design-system.css' | grep -q '^\.edutech-portal {'
 unzip -p "$ROOT_DIR/release/edutech-v1.0.0.zip" '*/includes/core/class-edutech-portal-pages.php' | grep -q 'edutech-portal'
+unzip -p "$ROOT_DIR/release/edutech-v1.0.0.zip" '*/includes/core/class-edutech-auth.php' | grep -q 'MAX_ATTEMPTS'
 
 printf '%s\n' 'Smoke tests passed.'

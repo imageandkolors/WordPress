@@ -231,6 +231,60 @@
   border-radius: var(--edutech-radius-md);
 }
 
+.edutech-portal .edutech-auth-card {
+  width: min(100%, 30rem);
+  margin: clamp(1rem, 5vw, 4rem) auto;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  background: var(--edutech-color-surface);
+  border: 1px solid var(--edutech-color-border);
+  border-radius: var(--edutech-radius-lg);
+  box-shadow: var(--edutech-shadow-md);
+}
+
+.edutech-portal .edutech-auth-card__title {
+  margin: 0 0 var(--edutech-space-6);
+  color: var(--edutech-color-ink);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.edutech-portal .edutech-auth-card #edutech-login-form {
+  display: grid;
+  gap: var(--edutech-space-3);
+}
+
+.edutech-portal .edutech-auth-card #edutech-login-form label {
+  color: var(--edutech-color-ink);
+  font-weight: 600;
+}
+
+.edutech-portal .edutech-auth-card #edutech-login-form input[type="text"],
+.edutech-portal .edutech-auth-card #edutech-login-form input[type="password"] {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--edutech-radius-sm);
+  font: inherit;
+}
+
+.edutech-portal .edutech-auth-card #edutech-login-submit {
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  color: #fff;
+  background: var(--edutech-color-primary);
+  border: 1px solid var(--edutech-color-primary);
+  border-radius: var(--edutech-radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.edutech-portal .edutech-auth-card > a {
+  display: inline-block;
+  margin-top: var(--edutech-space-4);
+  color: var(--edutech-color-primary-strong);
+}
+
 .edutech-portal .edutech-sr-only {
   position: absolute;
   width: 1px;

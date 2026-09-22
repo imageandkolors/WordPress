@@ -120,28 +120,25 @@ if ((isset($_POST["TransactionId"]))) {
 
 $current_page_url = home_url(add_query_arg(array(), $wp->request));
 if (! is_user_logged_in()) {
-	$login_form_args = array(
-		'redirect'       => $current_page_url,
-		'form_id'        => 'wlsm-login-form',
-		'id_username'    => 'wlsm-login-username',
-		'id_password'    => 'wlsm-login-password',
-		'id_remember'    => 'wlsm-login-remember',
-		'id_submit'      => 'wlsm-login-submit',
-		'value_username' => '',
-	);
+	$login_form_args = Edutech_Auth::login_form_args( $current_page_url );
+	?>
+	<div class="edutech-auth-card" data-edutech-auth="frontend">
+		<h2 class="edutech-auth-card__title"><?php esc_html_e( 'Sign in to Edutech', 'school-management' ); ?></h2>
+		<?php Edutech_Auth::render_notice(); ?>
+		<?php
+		// Display suspension message if present.
+		if ( isset( $_GET['wlsm_suspended'] ) && '1' === $_GET['wlsm_suspended'] && isset( $_GET['wlsm_message'] ) ) {
+			$message = urldecode( sanitize_text_field( wp_unslash( $_GET['wlsm_message'] ) ) );
+			echo '<div class="wlsm-alert wlsm-alert-danger wlsm-mb-3" role="alert">' . esc_html( $message ) . '</div>';
+		}
 
-	// Display suspension message if present
-	if (isset($_GET['wlsm_suspended']) && $_GET['wlsm_suspended'] == '1' && isset($_GET['wlsm_message'])) {
-		$message = urldecode(sanitize_text_field($_GET['wlsm_message']));
-		echo '<div class="wlsm-alert wlsm-alert-danger wlsm-mb-3" role="alert">' . esc_html($message) . '</div>';
-	}
-
-	wp_login_form($login_form_args);
-?>
-	<a target="_blank" href="<?php echo esc_url(wp_lostpassword_url($current_page_url)); ?>">
-		<?php esc_html_e('Lost your password?', 'school-management'); ?>
-	</a>
-<?php
+		wp_login_form( $login_form_args );
+		?>
+		<a target="_blank" href="<?php echo esc_url(wp_lostpassword_url($current_page_url)); ?>">
+			<?php esc_html_e('Lost your password?', 'school-management'); ?>
+		</a>
+	</div>
+	<?php
 } else {
 	global $wpdb;
 	$students = '';

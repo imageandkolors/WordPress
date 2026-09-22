@@ -8,7 +8,7 @@ class WLSM_Login
     public static function redirect_to_dashboard($redirect_to, $request, $user)
     {
         if ( WLSM_ADMIN_CAPABILITY !== 'manage_school_management' ) {
-			return $redirect_to;
+                return Edutech_Auth::safe_redirect( $redirect_to, home_url( '/' ) );
 		}
 
         if (isset($user->roles) && is_array($user->roles)) {
@@ -21,6 +21,6 @@ class WLSM_Login
             }
         }
 
-        return $redirect_to;
+        return Edutech_Auth::safe_redirect( $redirect_to, home_url( '/' ) );
     }
 }

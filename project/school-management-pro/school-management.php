@@ -39,6 +39,7 @@ require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-modules.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-features.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-portal.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-portal-pages.php';
+require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-auth.php';
 
 final class WLSM_School_Management {
 	private static $instance = null;
@@ -57,6 +58,7 @@ final class WLSM_School_Management {
 
 		private function initialize_hooks() {
 			require_once WLSM_PLUGIN_DIR_PATH . 'includes/helpers/WLSM_Brand.php';
+			Edutech_Auth::boot();
 
 			if ( ! Edutech_Environment::is_compatible() ) {
 				add_action( 'admin_notices', array( 'Edutech_Environment', 'render_admin_notice' ) );
