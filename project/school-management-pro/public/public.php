@@ -54,6 +54,7 @@ add_shortcode('school_register', array('WLSM_Shortcode', 'school_register'));
 
 // Enqueue shortcode assets.
 add_action('wp_enqueue_scripts', array('WLSM_Shortcode', 'enqueue_assets'));
+add_filter('body_class', array('WLSM_Shortcode', 'add_portal_body_class'));
 
 if (class_exists('WooCommerce')) {
     // Show admin bar for woocommerce.

@@ -22,6 +22,7 @@ test -f "$PLUGIN_DIR/includes/core/class-edutech-environment.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-migrations.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-modules.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-features.php"
+test -f "$PLUGIN_DIR/assets/css/edutech-design-system.css"
 
 grep -q 'Plugin Name: Edutech v1.0' "$PLUGIN_DIR/school-management.php"
 grep -q "define( 'EDUTECH_VERSION', '1.0.0'" "$PLUGIN_DIR/school-management.php"
@@ -30,6 +31,11 @@ grep -q "'name'        => 'Edutech v1.0'" "$PLUGIN_DIR/includes/helpers/WLSM_Bra
 grep -q 'class Edutech_Migrations' "$PLUGIN_DIR/includes/core/class-edutech-migrations.php"
 grep -q 'class Edutech_Modules' "$PLUGIN_DIR/includes/core/class-edutech-modules.php"
 grep -q 'class Edutech_Features' "$PLUGIN_DIR/includes/core/class-edutech-features.php"
+grep -q '^\.edutech-portal {' "$PLUGIN_DIR/assets/css/edutech-design-system.css"
+grep -q 'prefers-reduced-motion' "$PLUGIN_DIR/assets/css/edutech-design-system.css"
+grep -q 'focus-visible' "$PLUGIN_DIR/assets/css/edutech-design-system.css"
+grep -q "add_filter('body_class'" "$PLUGIN_DIR/public/public.php"
+grep -q "'edutech-design-system'" "$PLUGIN_DIR/public/inc/WLSM_Shortcode.php"
 
 printf '%s\n' '== First-party PHP syntax =='
 files=0
@@ -47,5 +53,6 @@ test -s "$ROOT_DIR/release/edutech-v1.0.0.zip"
 test -s "$ROOT_DIR/release/edutech-v1.0.0.zip.sha256"
 unzip -t "$ROOT_DIR/release/edutech-v1.0.0.zip" >/dev/null
 unzip -p "$ROOT_DIR/release/edutech-v1.0.0.zip" '*/EDUTECH-MANIFEST.json' | grep -q '"database_version": "1.0.0"'
+unzip -p "$ROOT_DIR/release/edutech-v1.0.0.zip" '*/assets/css/edutech-design-system.css' | grep -q '^\.edutech-portal {'
 
 printf '%s\n' 'Smoke tests passed.'

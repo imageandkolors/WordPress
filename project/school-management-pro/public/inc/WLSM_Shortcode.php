@@ -87,6 +87,46 @@ class WLSM_Shortcode {
 		return require_once WLSM_PLUGIN_DIR_PATH . 'public/inc/forms/zoom_redirect.php';
 	}
 
+	/**
+	 * Scope Edutech design tokens to pages that contain supported shortcodes.
+	 *
+	 * @param array<string> $classes Existing body classes.
+	 * @return array<string>
+	 */
+	public static function add_portal_body_class( $classes ) {
+		if ( is_admin() || ! is_singular() ) {
+			return $classes;
+		}
+
+		$post = get_post();
+		if ( ! $post ) {
+			return $classes;
+		}
+
+		$shortcodes = array(
+			'school_management_account',
+			'school_management_fees',
+			'school_management_inquiry',
+			'school_management_registration',
+			'school_management_staff_registration',
+			'school_management_noticeboard',
+			'school_management_exam_time_table',
+			'school_management_exam_admit_card',
+			'school_management_exam_result',
+			'school_management_certificate',
+			'school_management_lesson',
+			'school_management_invoice_history',
+			'school_management_zoom_redirect',
+		);
+		foreach ( $shortcodes as $shortcode ) {
+			if ( has_shortcode( $post->post_content, $shortcode ) ) {
+				$classes[] = 'edutech-portal';
+				break;
+			}
+		}
+		return array_values( array_unique( $classes ) );
+	}
+
 	public static function noticeboard( $attr ) {
 		self::enqueue_assets();
 		ob_start();
@@ -94,6 +134,12 @@ class WLSM_Shortcode {
 	}
 
 	public static function enqueue_assets() {
+		wp_enqueue_style(
+			'edutech-design-system',
+			WLSM_PLUGIN_URL . 'assets/css/edutech-design-system.css',
+			array(),
+			defined( 'EDUTECH_VERSION' ) ? EDUTECH_VERSION : '1.0.0'
+		);
 
 		wp_enqueue_style( 'jquery-confirm', WLSM_PLUGIN_URL . 'assets/css/jquery-confirm.min.css' );
 		wp_enqueue_style( 'toastr', WLSM_PLUGIN_URL . 'assets/css/toastr.min.css' );
