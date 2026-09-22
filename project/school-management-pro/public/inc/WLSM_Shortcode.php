@@ -9,7 +9,8 @@ class WLSM_Shortcode {
 	public static function account( $attr ) {
 		self::enqueue_assets();
 		ob_start();
-		return require_once WLSM_PLUGIN_DIR_PATH . 'public/inc/account/route.php';
+		$content = require WLSM_PLUGIN_DIR_PATH . 'public/inc/account/route.php';
+		return Edutech_Portal::wrap( $content, $attr );
 	}
 
 	public static function fees( $attr ) {

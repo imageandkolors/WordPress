@@ -44,6 +44,34 @@
   overflow: hidden;
 }
 
+.edutech-portal-frame {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.edutech-portal-frame__content {
+  width: 100%;
+}
+
+.edutech-portal-frame--embedded {
+  max-width: 76rem;
+}
+
+.edutech-portal-frame--full-width {
+  max-width: none;
+}
+
+.edutech-portal-frame--full-width .edutech-portal-frame__content {
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+.edutech-portal-frame--standalone {
+  max-width: 76rem;
+  min-height: 70vh;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: var(--edutech-color-subtle);
+}
+
 .edutech-portal .edutech-sidebar {
   padding: var(--edutech-space-6);
   background: var(--edutech-color-surface);
