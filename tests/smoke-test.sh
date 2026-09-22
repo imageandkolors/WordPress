@@ -15,11 +15,13 @@ composer check-platform-reqs --working-dir="$COMPOSER_DIR" --no-dev
 
 test -s "$COMPOSER_DIR/vendor/autoload.php"
 php "$ROOT_DIR/tests/jwt-compat.php"
+php "$ROOT_DIR/tests/feature-flags.php"
 test -f "$PLUGIN_DIR/school-management.php"
 test -f "$PLUGIN_DIR/includes/helpers/WLSM_Brand.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-environment.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-migrations.php"
 test -f "$PLUGIN_DIR/includes/core/class-edutech-modules.php"
+test -f "$PLUGIN_DIR/includes/core/class-edutech-features.php"
 
 grep -q 'Plugin Name: Edutech v1.0' "$PLUGIN_DIR/school-management.php"
 grep -q "define( 'EDUTECH_VERSION', '1.0.0'" "$PLUGIN_DIR/school-management.php"
@@ -27,6 +29,7 @@ grep -q "define( 'EDUTECH_DB_VERSION', '1.0.0'" "$PLUGIN_DIR/school-management.p
 grep -q "'name'        => 'Edutech v1.0'" "$PLUGIN_DIR/includes/helpers/WLSM_Brand.php"
 grep -q 'class Edutech_Migrations' "$PLUGIN_DIR/includes/core/class-edutech-migrations.php"
 grep -q 'class Edutech_Modules' "$PLUGIN_DIR/includes/core/class-edutech-modules.php"
+grep -q 'class Edutech_Features' "$PLUGIN_DIR/includes/core/class-edutech-features.php"
 
 printf '%s\n' '== First-party PHP syntax =='
 files=0

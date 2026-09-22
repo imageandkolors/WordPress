@@ -43,6 +43,7 @@ cat > "$STAGE_DIR/EDUTECH-MANIFEST.json" <<EOF
   "plugin_version": "1.0.0",
   "database_version": "1.0.0",
   "module_registry_version": "1.0.0",
+  "release_controls": "feature-flags-v1",
   "legacy_compatibility_version": "10.7.1",
   "entry_point": "school-management.php",
   "legacy_identifiers_preserved": true,

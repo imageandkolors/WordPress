@@ -36,6 +36,7 @@ if ( ! defined( 'EDUTECH_DB_VERSION' ) ) {
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-environment.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-migrations.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-modules.php';
+require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-features.php';
 
 final class WLSM_School_Management {
 	private static $instance = null;
