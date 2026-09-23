@@ -126,6 +126,9 @@ class WLSM_Shortcode {
 				if ( ! empty( $identity['role'] ) ) {
 					$classes[] = 'edutech-role-' . sanitize_html_class( $identity['role'] );
 				}
+				if ( class_exists( 'Edutech_Dashboard_Routes' ) ) {
+					$classes[] = Edutech_Dashboard_Routes::body_class( $identity );
+				}
 				break;
 			}
 		}
@@ -166,6 +169,7 @@ class WLSM_Shortcode {
 		wp_localize_script( 'wlsm-public', 'wlsmgenderlist', WLSM_Helper::gender_list() );
 		wp_localize_script( 'wlsm-public', 'wlsmbloodgrouplist', WLSM_Helper::blood_group_list() );
 		wp_localize_script( 'wlsm-public', 'edutechIdentity', Edutech_Identity::frontend() );
+		wp_localize_script( 'wlsm-public', 'edutechDashboard', Edutech_Dashboard_Routes::frontend() );
 
 		wp_localize_script( 'wlsm-public', 'wlsmajaxurl', admin_url( 'admin-ajax.php' ) );
 		wp_localize_script( 'wlsm-public', 'wlsmadminurl', admin_url() );
