@@ -40,6 +40,7 @@ require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-features.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-portal.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-portal-pages.php';
 require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-auth.php';
+require_once WLSM_PLUGIN_DIR_PATH . 'includes/core/class-edutech-identity.php';
 
 final class WLSM_School_Management {
 	private static $instance = null;
